@@ -86,12 +86,20 @@ def twit_auth_user():
 
 @app.route("/twit/user_action", methods=['GET'])
 def twit_user_action():
-  username = request.args["name"]
-  tkn_mgr = GetTwtTokenManager(username, client_id)
-  page = tkn_mgr.get_access_token()
-  page += "<br>"
-  # page += twt_bot.get_me(tkn_mgr.get_access_token())
-  page += twt_bot.create_public_list(tkn_mgr.get_access_token())
+  page = ""
+  try :
+    pass
+    username = request.args.get("name")
+    page += "Username: %s<br>" % (username)
+    tkn_mgr = GetTwtTokenManager(username, client_id)
+    page += "Access token: %s<br>" % (tkn_mgr.get_access_token())
+    page += "<br>"
+    page += "Me: %s<br>" % (twt_bot.get_me(tkn_mgr.get_access_token()))
+    page += twt_bot.create_public_list(tkn_mgr.get_access_token())
+  except Exception as ex:
+    page += "<br>New Exception occurred:<br>"
+    page += str(ex).replace('\n', '<br>')
+    page += "<br>Exception done<br>"
   return page
 
 # main driver function
