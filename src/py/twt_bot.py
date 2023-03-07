@@ -21,6 +21,6 @@ def create_public_list(access_token: str) -> str:
     "name": "my-list-from-deta-1",
     "private": True
   }
-  resp = requests.get(create_list_url, req_params, headers=req_headers)
+  resp = requests.post(create_list_url, req_params, headers=req_headers)
   print(resp)
   return (resp.text)
