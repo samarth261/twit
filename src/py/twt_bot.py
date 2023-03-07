@@ -11,14 +11,15 @@ def get_me(access_token: str) -> str:
   print(resp.text)
   return json.loads(resp.text)["data"]["username"]
 
-def create_public_list(access_token: str) -> str:
+def create_public_list(access_token: str, list_name: str) -> str:
   create_list_url = "https://api.twitter.com/2/lists"
   req_headers = {
     "Content-Type": "application/json",
     "Authorization": "Bearer %s" % access_token
   }
   req_params = {
-    "name": "my-list-from-deta-1",
+    "name": list_name,
+    "description": "List created from bot",
     "private": True
   }
   resp = requests.post(create_list_url, req_params, headers=req_headers)
