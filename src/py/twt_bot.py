@@ -19,9 +19,11 @@ def create_public_list(access_token: str, list_name: str) -> str:
   }
   req_params = {
     "name": list_name,
-    "description": "List created from bot",
-    "private": True
+    "description": "List created from bot"
   }
-  resp = requests.post(create_list_url, req_params, headers=req_headers)
+  resp = requests.post(create_list_url, json=req_params, headers=req_headers)
   print(resp)
   return (resp.text)
+
+def add_user_to_list(access_token: str, list_id: str, user_id: str):
+  pass
