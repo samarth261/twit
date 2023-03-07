@@ -58,3 +58,4 @@ def GetTwtTokenManager(user_name, client_id):
 
 def extract_access_token(auth_response: str) -> str:
   return json.loads(auth_response)['access_token']
+
