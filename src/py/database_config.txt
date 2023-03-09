@@ -1,0 +1,18 @@
+This file described the different maps that need to added for the twt_bot to
+work.
+
+There will be multiple adapters written.
+
+1st will be the deta space adapter.
+
+
+The maps:
+- user_name to user_id (user_name_map)
+  This is the map from the twitter user handle (user_name) to the twitter
+  user_id is maintained.
+
+- (user_id,list_name) to list_id (list_name_map)
+  This needs a composite key because list_names aren't unique across twitter.
+  The individual dbs can implement them how ever they want.
+
+- list_id to user_id (list_membership_map)

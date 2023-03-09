@@ -1,6 +1,8 @@
 import requests
 import json
 
+
+
 def get_me(access_token: str) -> str:
   get_me_url = "https://api.twitter.com/2/users/me"
   req_headers = {
@@ -25,5 +27,8 @@ def create_public_list(access_token: str, list_name: str) -> str:
   print(resp)
   return (resp.text)
 
-def add_user_to_list(access_token: str, list_id: str, user_id: str):
+def add_user_to_list(access_token: str,
+                     list_name: str,
+                     user_id: str,
+                     user_name: str):
   pass

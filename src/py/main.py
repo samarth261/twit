@@ -10,6 +10,7 @@ import json
 from twt_token_manager import GetTwtTokenManager
 import twt_bot
 from twt_token_manager import extract_access_token
+from twt_data_provider import TwtDetaDBProvider
 
 client_id = "ZnE5VG9ta1R3akVuTTZraWtaNlo6MTpjaQ"
 
@@ -38,7 +39,7 @@ def db_example():
   deta = Deta()
   db = deta.Base("my_first_db")
   db.put({"name": "sammy", "age": "26 yeas"})
-  db.put(['a', 'b', 'c'], "the key")
+  db.put(['a', 'b', 'c'], "the key
   return "Insert done"
 
 @app.route('/twit')
