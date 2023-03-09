@@ -10,9 +10,10 @@ import json
 from twt_token_manager import GetTwtTokenManager
 import twt_bot
 from twt_token_manager import extract_access_token
-from twt_data_provider import TwtDetaDBProvider
+from twt_data_provider import GetTwtDetaDBProvider
+from constants import CONST
 
-client_id = "ZnE5VG9ta1R3akVuTTZraWtaNlo6MTpjaQ"
+client_id = CONST.client_id
 
 # Flask constructor takes the name of
 # current module (__name__) as argument.
@@ -39,7 +40,7 @@ def db_example():
   deta = Deta()
   db = deta.Base("my_first_db")
   db.put({"name": "sammy", "age": "26 yeas"})
-  db.put(['a', 'b', 'c'], "the key
+  db.put(['a', 'b', 'c'], "the key")
   return "Insert done"
 
 @app.route('/twit')
@@ -90,12 +91,8 @@ def twit_user_action():
   page = ""
   try :
     username = request.args.get("name")
-    page += "Username: %s<br>" % (username)
-    tkn_mgr = GetTwtTokenManager(username, client_id)
-    page += "Access token: %s<br>" % (tkn_mgr.get_access_token())
-    page += "<br>"
-    page += "Me: %s<br>" % (twt_bot.get_me(tkn_mgr.get_access_token()))
-    page += twt_bot.create_public_list(tkn_mgr.get_access_token())
+    dp = GetTwtDetaDBProvider(user_name=username)
+    page += "<br>user_name: %s<br>user_id:%s<br>" % (dp._user_name, dp._user_id)
   except Exception as ex:
     page += "<br>New Exception occurred:<br>"
     page += str(ex).replace('\n', '<br>')
