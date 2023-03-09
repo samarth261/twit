@@ -99,6 +99,22 @@ def twit_user_action():
     page += "<br>Exception done<br>"
   return page
 
+@app.route("/twit/adduser", methods=['GET'])
+def twit_add_user_action():
+  page = ""
+  try :
+    username = request.args.get("name")
+    new_user = request.args.get("newname")
+    dp = GetTwtDetaDBProvider(user_name=username)
+    page += "<br>New user: %s<br>id: %s" % \
+              (new_user,
+               dp.lookup_user_name_map(new_user, fetch_if_not_found=True))
+  except Exception as ex:
+    page += "<br>New Exception occurred:<br>"
+    page += str(ex).replace('\n', '<br>')
+    page += "<br>Exception done<br>"
+  return page
+
 @app.route("/twit/create_list", methods=['GET'])
 def twit_create_list_action():
   page = ""
