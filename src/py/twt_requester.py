@@ -32,6 +32,11 @@ def get_user(access_token: str, username: str):
   return j
 
 def create_public_list(access_token: str, list_name: str) -> str:
+  '''
+  On success return the data response from the query. It has 2 fields:
+  - id: the list_id
+  - name: the name of the list
+  '''
   create_list_url = "https://api.twitter.com/2/lists"
   req_headers = {
     "Content-Type": "application/json",
@@ -43,13 +48,36 @@ def create_public_list(access_token: str, list_name: str) -> str:
   }
   resp = requests.post(create_list_url, json=req_params, headers=req_headers)
   print(resp)
-  return (resp.text)
+  try:
+    j = json.loads(resp.text)
+    return j['data']
+  except Exception as ex:
+    print("Failed to create list with name %s" % list_name)
+  
+  return None
 
 def add_user_to_list(access_token: str,
-                     list_name: str,
-                     user_id: str,
-                     user_name: str):
-  pass
+                     list_id: str,
+                     user_id: str) -> bool :
+  add_user_to_list_url = "https://api.twitter.com/2/lists/%s/members" % list_id
+  req_headers = {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer %s" % access_token
+  }
+  req_params = {
+    "user_id": user_id
+  }
+  resp = requests.post(add_user_to_list_url,
+                       json=req_params,
+                       headers=req_headers)
+  try:
+    j = json.loads(resp.text)
+    done = j["data"]["is_member"]
+  except Exception as ex:
+    print("Failed to add user %s to list %s" % (user_id, list_id))
+    return False
+  return done
+  
 
 def get_following(access_token: str, user_id: str) -> list:
   '''
@@ -83,3 +111,35 @@ def get_following(access_token: str, user_id: str) -> list:
   print("Follower count: ", len(res_list))
   return res_list
 
+
+def get_all_user_lists(access_token: str, user_id: str) -> list:
+  '''
+  Get's all the lists belonging to user_id.
+  The return will be a list with each member a dict with these keys:
+  - 'id'
+  - 'name'
+  '''
+  owned_list_url = "https://api.twitter.com/2/users/%s/owned_lists" % user_id
+
+  req_headers = {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer %s" % access_token
+  }
+
+  ret_list = []
+  next_token = None
+  while True:
+    req_params = {
+      "max_results": 1000
+    }
+    if next_token != None:
+      req_params.update({"pagination_token": next_token})
+
+    resp = requests.get(owned_list_url, params=req_params, headers=req_headers)
+    j = json.loads(resp.text)
+    ret_list.append(j['data'])
+    next_token = j['meta'].get('next_token')
+    if next_token == None:
+      break
+  
+  return ret_list

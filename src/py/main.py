@@ -157,6 +157,36 @@ def twit_fetch_following():
     page += "<br>Exception done<br>"
   return page
 
+@app.route("/twit/make_following_list", methods=["GET"])
+def twit_make_a_list_from_following_list():
+  page = ""
+  try:
+    auth_user = request.args.get("self")
+    tgt_user = request.args.get("tgt")
+    list_name = tgt_user + "_following"
+    dp = GetTwtDetaDBProvider(auth_user)
+    self_id = dp.lookup_user_name_map(user_name=auth_user)
+    print("Will make a list for %s" % tgt_user)
+    list_id = dp.lookup_list_name_map(user_id=self_id,
+                                      list_name=list_name,
+                                      fetch_if_not_found=True,
+                                      create_if_not_exists=True)
+    users = dp.get_following_of_user(user_name=tgt_user, force_fetch=False)
+    for user in users:
+      added = \
+        dp.add_user_id_to_list_id(user_id=user, list_id=list_id, pre_check=True)
+      if added == False:
+        print("Started failing")
+        break
+      print("Added %s to list %s" % (user, list_id))
+  except Exception as ex:
+    page += "<br>New Exception occurred:<br>"
+    page += str(ex).replace('\n', '<br>')
+    traceback.print_exc()
+    page += "<br>Exception done<br>"
+  
+  return page
+
 
 # main driver function
 if __name__ == '__main__': 
