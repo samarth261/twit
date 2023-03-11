@@ -1,5 +1,6 @@
 import requests
 import json
+import time
 
 def get_me(access_token: str):
   get_me_url = "https://api.twitter.com/2/users/me"
@@ -31,7 +32,7 @@ def get_user(access_token: str, username: str):
     print(ex)
   return j
 
-def create_public_list(access_token: str, list_name: str) -> str:
+def create_public_list(access_token: str, list_name: str):
   '''
   On success return the data response from the query. It has 2 fields:
   - id: the list_id
@@ -59,6 +60,7 @@ def create_public_list(access_token: str, list_name: str) -> str:
 def add_user_to_list(access_token: str,
                      list_id: str,
                      user_id: str) -> bool :
+  time.sleep(0.1)
   add_user_to_list_url = "https://api.twitter.com/2/lists/%s/members" % list_id
   req_headers = {
     "Content-Type": "application/json",
@@ -136,9 +138,13 @@ def get_all_user_lists(access_token: str, user_id: str) -> list:
       req_params.update({"pagination_token": next_token})
 
     resp = requests.get(owned_list_url, params=req_params, headers=req_headers)
-    j = json.loads(resp.text)
-    ret_list.append(j['data'])
-    next_token = j['meta'].get('next_token')
+    try:
+      j = json.loads(resp.text)
+      ret_list.append(j['data'])
+      next_token = j['meta'].get('next_token')
+    except Exception as ex:
+      print("Excetion occured when getting lists for %s user\n. resp=%s" \
+              % (user_id, resp))
     if next_token == None:
       break
   

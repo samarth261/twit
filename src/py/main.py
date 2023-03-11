@@ -6,6 +6,7 @@ from flask import request
 import os
 import requests
 import json
+import time
 import traceback
 
 import logging, logging.config
@@ -176,8 +177,10 @@ def twit_make_a_list_from_following_list():
       added = \
         dp.add_user_id_to_list_id(user_id=user, list_id=list_id, pre_check=True)
       if added == False:
+        page+="done<br>"
         print("Started failing")
         break
+      page+="%s added to list %s<br>" % (user, list_name)
       print("Added %s to list %s" % (user, list_id))
   except Exception as ex:
     page += "<br>New Exception occurred:<br>"
