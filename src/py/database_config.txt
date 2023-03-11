@@ -16,3 +16,7 @@ The maps:
   The individual dbs can implement them how ever they want.
 
 - list_id to user_id (list_membership_map)
+
+- user_id to follower list array.
+  The value field will be a python array with the user_id that are being
+  followed.

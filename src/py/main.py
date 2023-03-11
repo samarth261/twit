@@ -6,6 +6,9 @@ from flask import request
 import os
 import requests
 import json
+import traceback
+
+import logging, logging.config
 
 from twt_token_manager import GetTwtTokenManager
 import twt_bot
@@ -130,10 +133,33 @@ def twit_create_list_action():
     page += "<br>Exception done<br>"
   return page
 
+@app.route("/twit/fetch_following", methods=["GET"])
+def twit_fetch_following():
+  FORMAT = '%(asctime)s {%(pathname)s:%(lineno)d} - z%(message)s\',\'%H:%M:%S'
+  logging.basicConfig(format = FORMAT)
+  log = logging.getLogger("__main__")
+  log.setLevel(logging.INFO)
+  log.info("Starting to fetch the following")
+  page = ""
+  try:
+    user_name = request.args.get("name")
+    tgt_user = request.args.get("tgt")
+    print("log", user_name, tgt_user)
+    # dp = GetTwtDetaDBProvider(user_name=user_name)
+    dp = GetTwtDetaDBProvider(user_name)
+    res = dp.get_following_of_user(tgt_user, False)
+    for ii in res:
+      page += "id: %s<br>" % ii
+  except Exception as ex:
+    page += "<br>New Exception occurred:<br>"
+    page += str(ex).replace('\n', '<br>')
+    traceback.print_exc()
+    page += "<br>Exception done<br>"
+  return page
+
 
 # main driver function
-if __name__ == '__main__':
- 
+if __name__ == '__main__': 
   # run() method of Flask class runs the application
   # on the local development server.
   app.run()

@@ -6,6 +6,8 @@ from deta import Deta
 from twt_token_manager import GetTwtTokenManager
 from constants import CONST
 import twt_requester
+import time
+import logging, logging.config
 
 class TwtDataProvider(abc.ABC):
   @classmethod
@@ -32,6 +34,16 @@ class TwtDataProvider(abc.ABC):
   def lookup_list_name_map(self, user_id: str, list_name:str) -> str:
     pass
 
+  @classmethod
+  @abc.abstractclassmethod
+  def get_following_of_user(self, user_name: str,
+                            force_fetch: bool):
+    '''
+    Fetch the following of a user. user_name is the twitter user handle.
+    If force_fetch is set then forcefully callt he API again.
+    '''
+    pass
+
 
 class TwtDetaDBProvider(TwtDataProvider):
   '''
@@ -40,6 +52,7 @@ class TwtDetaDBProvider(TwtDataProvider):
   '''
 
   USER_NAME_MAP_BASE_NAME = "user_name_map"
+  USER_ID_FOLLOWING_MAP = "user_following_map"
 
   _user_map = {}
 
@@ -48,6 +61,11 @@ class TwtDetaDBProvider(TwtDataProvider):
   user_name_map:
     key: user_name, twitter user handle
     user_id: the user name.
+
+  user_following_map:
+    key: user_id
+    last_updated: the last time this was updated.
+    following: the array with the user ids.
   '''
 
   def __init__(self, user_name: str):
@@ -64,9 +82,10 @@ class TwtDetaDBProvider(TwtDataProvider):
       print("Self not found in map. Adding myself")
       self.add_to_user_name_map(user_name=user_name, user_id=self._user_id)
     TwtDetaDBProvider._user_map.update({user_name: self})
-    print("Creating the object for deta db provider")
+    print("Creating the object for deta db provider user_name: %s"\
+          % self._user_name)
   
-  def get_map_db(self, deta_space_base_name: str):
+  def _get_map_db(self, deta_space_base_name: str):
     db = self._maps.get(deta_space_base_name)
     if db is None:
       db = self._deta.Base(deta_space_base_name)
@@ -75,7 +94,7 @@ class TwtDetaDBProvider(TwtDataProvider):
 
   def lookup_user_name_map(self, user_name: str,
                            fetch_if_not_found:bool = False) -> str:
-    db = self.get_map_db(self.USER_NAME_MAP_BASE_NAME)
+    db = self._get_map_db(self.USER_NAME_MAP_BASE_NAME)
     db_ret = db.get(user_name)
     user_id = None
     try:
@@ -91,7 +110,7 @@ class TwtDetaDBProvider(TwtDataProvider):
     return user_id
 
   def add_to_user_name_map(self, user_name: str, user_id: str = None) -> bool:
-    db = self.get_map_db(self.USER_NAME_MAP_BASE_NAME)
+    db = self._get_map_db(self.USER_NAME_MAP_BASE_NAME)
     if user_id == None:
       _ = twt_requester.get_user(self._tkn_mgr.get_access_token(),
                                  username= user_name)
@@ -103,6 +122,29 @@ class TwtDetaDBProvider(TwtDataProvider):
 
   def lookup_list_name_map(self, user_id: str, list_name:str) -> str:
     pass
+
+  def get_following_of_user(self, user_name: str,
+                            force_fetch: bool = False):
+    db = self._get_map_db(self.USER_ID_FOLLOWING_MAP)
+    user_id = self.lookup_user_name_map(user_name, fetch_if_not_found=True)
+
+    user_id_list = list()
+    db_ret = db.get(user_id)
+    if force_fetch or db_ret == None:
+      f_list = twt_requester.get_following(self._tkn_mgr.get_access_token(),
+                                           user_id=user_id)
+      for ii in f_list:
+        user_id_list.append(ii["id"])
+        self.add_to_user_name_map(ii["username"], ii["id"])
+      db.put(key = user_id,
+             data = {"last_updated": time.time(),
+                     "following": user_id_list})
+    else:
+      for ii in db_ret['following']:
+        user_id_list.append(ii)
+    
+    return user_id_list
+  
 
 
 def GetTwtDetaDBProvider(user_name: str):
