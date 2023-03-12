@@ -158,30 +158,38 @@ def twit_fetch_following():
     page += "<br>Exception done<br>"
   return page
 
+def service_make_a_list_from_following_list(auth_user, tgt_user):
+  page = ""
+  list_name = tgt_user + "_following"
+  dp = GetTwtDetaDBProvider(auth_user)
+  self_id = dp.lookup_user_name_map(user_name=auth_user)
+  print("Will make a list for %s" % tgt_user)
+  list_id = dp.lookup_list_name_map(user_id=self_id,
+                                    list_name=list_name,
+                                    fetch_if_not_found=True,
+                                    create_if_not_exists=True)
+  users = dp.get_following_of_user(user_name=tgt_user, force_fetch=False)
+  for user in users:
+    added = \
+      dp.add_user_id_to_list_id(user_id=user, list_id=list_id, pre_check=True)
+    if added == False:
+      page+="done<br>"
+      print("Started failing")
+      break
+    page+="%s added to list %s<br>" % (user, list_name)
+    print("Added %s to list %s" % (user, list_id))
+  return page
+
 @app.route("/twit/make_following_list", methods=["GET"])
 def twit_make_a_list_from_following_list():
   page = ""
   try:
     auth_user = request.args.get("self")
     tgt_user = request.args.get("tgt")
-    list_name = tgt_user + "_following"
-    dp = GetTwtDetaDBProvider(auth_user)
-    self_id = dp.lookup_user_name_map(user_name=auth_user)
-    print("Will make a list for %s" % tgt_user)
-    list_id = dp.lookup_list_name_map(user_id=self_id,
-                                      list_name=list_name,
-                                      fetch_if_not_found=True,
-                                      create_if_not_exists=True)
-    users = dp.get_following_of_user(user_name=tgt_user, force_fetch=False)
-    for user in users:
-      added = \
-        dp.add_user_id_to_list_id(user_id=user, list_id=list_id, pre_check=True)
-      if added == False:
-        page+="done<br>"
-        print("Started failing")
-        break
-      page+="%s added to list %s<br>" % (user, list_name)
-      print("Added %s to list %s" % (user, list_id))
+    print("starting of %s %s_list" % (auth_user, tgt_user))
+    page += service_make_a_list_from_following_list(auth_user=auth_user,
+                                                    tgt_user=tgt_user)
+    
   except Exception as ex:
     page += "<br>New Exception occurred:<br>"
     page += str(ex).replace('\n', '<br>')
@@ -189,6 +197,19 @@ def twit_make_a_list_from_following_list():
     page += "<br>Exception done<br>"
   
   return page
+
+@app.route("/__space/v0/actions", methods=['POST'])
+def __space_action_service():
+  d = request.data
+  user_name = None
+  tgt_name = None
+  try:
+    j = json.loads(d)
+    trigger_id = j['event']['id']
+    user_name, tgt_name = trigger_id.split("_")
+    page = service_make_a_list_from_following_list(user_name, tgt_name)
+  except Exception as ex:
+    print("Exception in handling event")
 
 
 # main driver function
