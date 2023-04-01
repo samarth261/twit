@@ -5,6 +5,7 @@ from flask import request
 
 import os
 import requests
+import random
 import json
 import time
 import traceback
@@ -169,6 +170,7 @@ def service_make_a_list_from_following_list(auth_user, tgt_user):
                                     fetch_if_not_found=True,
                                     create_if_not_exists=True)
   users = dp.get_following_of_user(user_name=tgt_user, force_fetch=False)
+  random.shuffle(users)
   for user in users:
     added = \
       dp.add_user_id_to_list_id(user_id=user, list_id=list_id, pre_check=True)
@@ -212,7 +214,7 @@ def __space_action_service():
     print("Exception in handling event")
 
 
-# main driver function
+# main driver
 if __name__ == '__main__': 
   # run() method of Flask class runs the application
   # on the local development server.
