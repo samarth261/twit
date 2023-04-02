@@ -16,6 +16,7 @@ from twt_token_manager import GetTwtTokenManager
 import twt_bot
 from twt_token_manager import extract_access_token
 from twt_data_provider import GetTwtDetaDBProvider
+from twt_global import TwtGlobals
 from constants import CONST
 
 client_id = CONST.client_id
@@ -112,21 +113,6 @@ def twit_add_user_action():
     page += "<br>Exception done<br>"
   return page
 
-@app.route("/twit/create_list", methods=['GET'])
-def twit_create_list_action():
-  page = ""
-  try:
-    username = request.args.get("name")
-    list_name = request.args.get("listname")
-    tkn_mgr = GetTwtTokenManager(username, client_id)
-    page += "<br>Me: %s<br>" % (twt_bot.get_me(tkn_mgr.get_access_token()))
-    page += twt_bot.create_public_list(tkn_mgr.get_access_token(), list_name)
-  except Exception as ex:
-    page += "<br>New Exception occurred:<br>"
-    page += str(ex).replace('\n', '<br>')
-    page += "<br>Exception done<br>"
-  return page
-
 @app.route("/twit/fetch_following", methods=["GET"])
 def twit_fetch_following():
   FORMAT = '%(asctime)s {%(pathname)s:%(lineno)d} - z%(message)s\',\'%H:%M:%S'
@@ -151,7 +137,7 @@ def twit_fetch_following():
     page += "<br>Exception done<br>"
   return page
 
-def service_make_a_list_from_following_list(auth_user, tgt_user):
+def helper_make_a_list_from_following_list(auth_user, tgt_user):
   page = ""
   list_name = tgt_user + "_following"
   dp = GetTwtDetaDBProvider(auth_user)
@@ -181,7 +167,7 @@ def twit_make_a_list_from_following_list():
     auth_user = request.args.get("self")
     tgt_user = request.args.get("tgt")
     print("starting of %s %s_list" % (auth_user, tgt_user))
-    page += service_make_a_list_from_following_list(auth_user=auth_user,
+    page += helper_make_a_list_from_following_list(auth_user=auth_user,
                                                     tgt_user=tgt_user)
     
   except Exception as ex:
@@ -190,6 +176,23 @@ def twit_make_a_list_from_following_list():
     traceback.print_exc()
     page += "<br>Exception done<br>"
   
+  return page
+
+
+@app.route("/twit/change_client_id", method=["GET"])
+def twit_change_client_id():
+  page = ""
+  try:
+    new_cid = request.args.get("new_client_id")
+    page+= "New client id: " + new_cid
+    g = TwtGlobals()
+    g.SetClientId(new_cid)
+    page += "Done setting"
+  except Exception as ex:
+    page += "<br>New Exception occurred:<br>"
+    page += str(ex).replace('\n', '<br>')
+    traceback.print_exc()
+    page += "<br>Exception done<br>"
   return page
 
 @app.route("/__space/v0/actions", methods=['POST'])
@@ -201,7 +204,7 @@ def __space_action_service():
     j = json.loads(d)
     trigger_id = j['event']['id']
     user_name, tgt_name = trigger_id.split("_")
-    page = service_make_a_list_from_following_list(user_name, tgt_name)
+    page = helper_make_a_list_from_following_list(user_name, tgt_name)
   except Exception as ex:
     print("Exception in handling event")
 

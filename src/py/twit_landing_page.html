@@ -16,12 +16,12 @@
             border: none;
         }
 
-        form[name="tgtlist"] {
+        form {
             border: 2px solid black;
             padding: 20px;
             width: 400px;
             margin-top: 20px;
-            float: left;
+            display: block;
         }
 
         h4 {
@@ -50,6 +50,14 @@
             </tr>
         </table>
         <input type="submit" value="Add job">
+    </form>
+    <form name="change_client_id" action="/twit/change_client_id", method="get">
+        <h4>Change the twitter client API</h4>
+        <table>
+            <tr><label for="">New client id</label></tr>
+            <tr><input type="text" id="new_client_id" name="new_client_id" /></tr>
+        </table>
+        <input type="submit" value="Change client id">
     </form>
 
 </body>
