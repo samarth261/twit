@@ -44,7 +44,7 @@ class TwtGlobals:
       db_ret = self._get_db().get(self.MAP_VALUES.CLIENT_ID)
       if db_ret is None:
         return None
-      self._client_id = db_ret("value")
+      self._client_id = db_ret["value"]
       
     return self._client_id
 
