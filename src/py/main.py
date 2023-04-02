@@ -17,7 +17,6 @@ import twt_bot
 from twt_token_manager import extract_access_token
 from twt_data_provider import GetTwtDetaDBProvider
 from twt_global import TwtGlobals
-from constants import CONST
 
 client_id = TwtGlobals().GetClientId()
 
@@ -78,7 +77,7 @@ def twit_auth_user():
   resp = requests.post(confirm_auth_url, req_params, req_headers)
   print(resp.text)
   username = twt_bot.get_me(extract_access_token(resp.text))
-  GetTwtTokenManager(username, client_id).set_token_json(resp.text)
+  GetTwtTokenManager(username).set_token_json(resp.text)
   j = json.loads(resp.text)
   ret += resp.text + "<br>"
   ret += json.dumps(j, indent=2).replace("\n", "<br>")

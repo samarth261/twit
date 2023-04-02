@@ -4,7 +4,7 @@
 import abc
 from deta import Deta
 from twt_token_manager import GetTwtTokenManager
-from constants import CONST
+from twt_global import TwtGlobals
 import twt_requester
 import time
 import logging, logging.config
@@ -112,7 +112,7 @@ class TwtDetaDBProvider(TwtDataProvider):
     self._user_name = user_name
     self._deta = Deta()
     self._maps = {}
-    self._tkn_mgr = GetTwtTokenManager(self._user_name, CONST.client_id)
+    self._tkn_mgr = GetTwtTokenManager(self._user_name)
     self._user_id = self.lookup_user_name_map(user_name=user_name)
     if self._user_id in (None, ""):
       _ = twt_requester.get_me(self._tkn_mgr.get_access_token())

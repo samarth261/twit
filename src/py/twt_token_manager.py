@@ -3,16 +3,18 @@ import time
 import requests
 import json
 
+from twt_global import TwtGlobals
+
 class consts:
   user_tokens_db_name = "USER_TOKENS"
 
 class _twt_token_manager:
   user_token_map = {}
 
-  def __init__(self, user_name, client_id) -> None:
+  def __init__(self, user_name) -> None:
     print("Createing object for user name = %s" % (user_name))
     self._user_name = user_name
-    self._client_id = client_id
+    self._client_id = TwtGlobals().GetClientId()
     self._db = Deta().Base(consts.user_tokens_db_name)
     _twt_token_manager.user_token_map.update({user_name: self})
   
@@ -50,9 +52,9 @@ class _twt_token_manager:
     self.set_token_json(resp.text)
 
 
-def GetTwtTokenManager(user_name, client_id):
+def GetTwtTokenManager(user_name):
   if user_name not in _twt_token_manager.user_token_map:
-    return _twt_token_manager(user_name, client_id)
+    return _twt_token_manager(user_name)
 
   return _twt_token_manager.user_token_map[user_name]
 
