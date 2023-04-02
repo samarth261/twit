@@ -1,3 +1,5 @@
+# This file has the functions to actually make the api calls to twitter server.
+
 import requests
 import json
 import time

@@ -27,7 +27,7 @@ app = Flask(__name__)
 # The route() function of the Flask class is a decorator,
 # which tells the application which URL should call
 # the associated function.
-@app.route('/')
+@app.route('/old_route')
 # ‘/’ URL is bound with hello_world() function.
 def hello_world():
   # return 'Hello World .. from -sam'
@@ -40,15 +40,7 @@ def hello_world():
 def get_redirect_uri() -> str:
   return "https://%s/twit/auth_user" % os.environ["DETA_SPACE_APP_HOSTNAME"]
 
-@app.route('/db')
-def db_example():
-  deta = Deta()
-  db = deta.Base("my_first_db")
-  db.put({"name": "sammy", "age": "26 yeas"})
-  db.put(['a', 'b', 'c'], "the key")
-  return "Insert done"
-
-@app.route('/twit')
+@app.route('/')
 def twit_landingpage():
   page = open("twit_landing_page.html").read()
   twitter_allow_access_url = (\

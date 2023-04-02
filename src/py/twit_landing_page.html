@@ -1,6 +1,57 @@
+<!DOCTYPE html>
 <html>
-<head><title> Allow bot access </title></head>
+
+<head>
+    <title>Twitter bot</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            border: none;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: none;
+        }
+
+        form[name="tgtlist"] {
+            border: 2px solid black;
+            padding: 20px;
+            width: 400px;
+            margin-top: 20px;
+            float: left;
+        }
+
+        h4 {
+            margin: 0;
+        }
+
+        input[type="submit"] {
+            padding: 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
 <body>
-    Click <a href="%s">here</a> to give bot access to twitter account
+    <div id="twit-auth">Click <a href="%s">here</a> to give bot access to twitter account</div>
+    <form name="tgtlist" action="/twit/make_following_list" method="get">
+        <h4>Make a public list of accounts of the 'followers' of target</h4>
+        <table>
+            <tr>
+                <th><label for="self">Source account (self):</label></th>
+                <td><input type="text" id="self" name="self"></td>
+            </tr>
+            <tr>
+                <th><label for="tgt">Target account:</label></th>
+                <td><input type="text" id="tgt" name="tgt"></td>
+            </tr>
+        </table>
+        <input type="submit" value="Add job">
+    </form>
+
 </body>
+
 </html>
