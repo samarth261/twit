@@ -52,8 +52,7 @@ def twit_landingpage():
     "list.read list.write block.read block.write bookmark.read bookmark.write&" +\
     "code_challenge=challenge&state=state&code_challenge_method=plain" )% \
       (client_id, get_redirect_uri())
-  twitter_callback_uri = "https://%s/twit/auth_user" % \
-    (os.environ["DETA_SPACE_APP_HOSTNAME"])
+  twitter_callback_uri = get_redirect_uri()
   page = page % (twitter_callback_uri, twitter_allow_access_url)
   return page
 
