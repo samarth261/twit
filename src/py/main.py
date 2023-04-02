@@ -19,7 +19,7 @@ from twt_data_provider import GetTwtDetaDBProvider
 from twt_global import TwtGlobals
 from constants import CONST
 
-client_id = CONST.client_id
+client_id = TwtGlobals().GetClientId()
 
 # Flask constructor takes the name of
 # current module (__name__) as argument.
@@ -52,7 +52,9 @@ def twit_landingpage():
     "list.read list.write block.read block.write bookmark.read bookmark.write&" +\
     "code_challenge=challenge&state=state&code_challenge_method=plain" )% \
       (client_id, get_redirect_uri())
-  page = page % (twitter_allow_access_url)
+  twitter_callback_uri = "https://%s/twit/auth_user" % \
+    (os.environ["DETA_SPACE_APP_HOSTNAME"])
+  page = page % (twitter_callback_uri, twitter_allow_access_url)
   return page
 
 @app.route("/twit/auth_user")
@@ -179,7 +181,7 @@ def twit_make_a_list_from_following_list():
   return page
 
 
-@app.route("/twit/change_client_id", method=["GET"])
+@app.route("/twit/change_client_id", methods=["GET"])
 def twit_change_client_id():
   page = ""
   try:
