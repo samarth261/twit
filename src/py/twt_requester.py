@@ -139,10 +139,10 @@ def get_all_user_lists(access_token: str, user_id: str) -> list:
     if next_token != None:
       req_params.update({"pagination_token": next_token})
 
-    resp = requests.get(owned_list_url, params=req_params, headers=req_headers)
+    resp = requests.get(owned_list_url, json=req_params, headers=req_headers)
     try:
       j = json.loads(resp.text)
-      ret_list.append(j['data'])
+      ret_list.extend(j['data'])
       next_token = j['meta'].get('next_token')
     except Exception as ex:
       print("Excetion occured when getting lists for %s user\n. resp=%s" \

@@ -1,4 +1,6 @@
 # this is the main file. Hope it works.
+import logging, logging.config
+
 from deta import Deta
 from flask import Flask
 from flask import request
@@ -9,8 +11,6 @@ import random
 import json
 import time
 import traceback
-
-import logging, logging.config
 
 from twt_token_manager import GetTwtTokenManager
 import twt_bot
@@ -23,26 +23,33 @@ client_id = TwtGlobals().GetClientId()
 # Flask constructor takes the name of
 # current module (__name__) as argument.
 app = Flask(__name__)
- 
+
 # The route() function of the Flask class is a decorator,
 # which tells the application which URL should call
 # the associated function.
 @app.route('/old_route')
 # ‘/’ URL is bound with hello_world() function.
 def hello_world():
-  # return 'Hello World .. from -sam'
+  '''
+  return 'Hello World .. from -sam'
+  '''
   ret = ""
   for ii in os.environ:
-    ret += "%s = %s<br>" % (str(ii), str(os.environ[ii]))
-  
+    ret += f"${ii} = ${os.environ[ii]}<br>"
   return ret
 
 def get_redirect_uri() -> str:
-  return "https://%s/twit/auth_user" % os.environ["DETA_SPACE_APP_HOSTNAME"]
+  '''
+  This is the url that needs to added in the twitter app as the redirect url.
+  '''
+  return f"https://{os.environ['DETA_SPACE_APP_HOSTNAME']}/twit/auth_user"
 
 @app.route('/')
 def twit_landingpage():
-  page = open("twit_landing_page.html").read()
+  '''
+  This is the starting page of the application.
+  '''
+  page = open("twit_landing_page.html", "r").read()
   twitter_allow_access_url = (\
     "https://twitter.com/i/oauth2/authorize?response_type=code&client_id=%s&" + \
     "redirect_uri=%s&" + \

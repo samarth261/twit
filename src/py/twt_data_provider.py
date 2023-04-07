@@ -73,6 +73,8 @@ class TwtDataProvider(abc.ABC):
     '''
 
 
+# TODO(samarth.s): Improve the singleton implementation. Use the __new__ dunder
+# method to actually control the creation of the new objects.
 class TwtDetaDBProvider(TwtDataProvider):
   '''
   This is used to read and write data to the deta DB available in the deta 
@@ -83,6 +85,7 @@ class TwtDetaDBProvider(TwtDataProvider):
   USER_ID_FOLLOWING_MAP = "user_following_map"
   USER_ID_LIST_NAME_TO_LIST_ID_MAP = "user_list_list_id_map"
   LIST_ID_TO_USER_MAP = "list_id_user_map"
+  LMTC_MAP = "lmtc_map"
 
   _user_map = {}
 
@@ -106,6 +109,13 @@ class TwtDetaDBProvider(TwtDataProvider):
   list_id_user_map:
     key: list_id, the twitter list_id
     members: An array with the users added to the list
+
+  lmtc_map:
+    key: list_id, the twitter list_id
+    target_members: This is the target list members. array type
+    current_members: This is the list of members currently in the list. The
+                     sync of this will be taken care by LMTClist.
+    failed_to_add: This is the array of user_ids that got failed to add.
   '''
 
   def __init__(self, user_name: str):
@@ -169,12 +179,23 @@ class TwtDetaDBProvider(TwtDataProvider):
     try:
       if db_res.count == 1:
         list_id = db_res.items[0]["list_id"]
+      if db_res.count > 1:
+        print(f"Multiple instances for list_name:{list_name} deleting them")
+        for jj in db_res.items[:-1]:
+          db.delete(jj["key"])
+        list_id = db_res.items[0]["list_id"]
     except Exception as ex:
-      print("Failed to get list_id")
-    if list_id == None and fetch_if_not_found:
+      print("Failed to get list_id", ex)
+    if list_id is None and fetch_if_not_found:
       res = twt_requester.get_all_user_lists(self._tkn_mgr.get_access_token(),
                                              user_id)
       for ii in res:
+        # First check if it's alread in the base. Insert only otherwise.
+        check_res = db.fetch({"user_id": user_id,
+                              "list_name": ii['name'],
+                              "list_id": ii['id']})
+        if check_res.count > 0:
+          continue
         db.put(data = {"user_id": user_id,
                        "list_name": ii['name'],
                        "list_id": ii['id']})
@@ -182,18 +203,21 @@ class TwtDetaDBProvider(TwtDataProvider):
     try:
       if db_res.count == 1:
         list_id = db_res.items[0]["list_id"]
+      if db_res.count > 1:
+        print("Found a lot more than 1. Somehting is wrong")
+        list_id = db_res.items[0]["list_id"]
     except Exception as ex:
       list_id = None
-      print("Error while getting it after fetch")
+      print("Error while getting it after fetch", ex)
     
-    if list_id == None and create_if_not_exists:
+    if list_id is None and create_if_not_exists:
       req_res = \
         twt_requester.create_public_list(self._tkn_mgr.get_access_token(),
                                          list_name=list_name)
-      if req_res == None:
+      if req_res is None:
         return None
       list_id = req_res.get('id')
-      if list_id != None:
+      if list_id is not None:
         db.put(data = {"user_id": user_id,
                        "list_name": list_name,
                        "list_id": list_id})
@@ -262,6 +286,10 @@ class TwtDetaDBProvider(TwtDataProvider):
     ret = user_id in members
     return ret
 
+  
+
+# This should be the only thing imported from this file. This is like the
+# factory design pattern.
 def GetTwtDetaDBProvider(user_name: str):
   if user_name not in TwtDetaDBProvider._user_map:
     return TwtDetaDBProvider(user_name=user_name)
