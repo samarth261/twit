@@ -17,6 +17,7 @@ import twt_bot
 from twt_token_manager import extract_access_token
 from twt_data_provider import GetTwtDetaDBProvider
 from twt_global import TwtGlobals
+from twt_lmtc_list import LMTCList
 
 client_id = TwtGlobals().GetClientId()
 
@@ -185,6 +186,28 @@ def twit_make_a_list_from_following_list():
   
   return page
 
+@app.route("/twit/add_job_following_list", methods=["GET"])
+def twit_make_a_list_from_following_list():
+  page = ""
+  try:
+    auth_user = request.args.get("self")
+    tgt_user = request.args.get("tgt")
+    print("starting of %s %s_list" % (auth_user, tgt_user))
+    lname = f"{tgt_user}_following"
+    dp = GetTwtDetaDBProvider(auth_user)
+    users = dp.get_following_of_user(user_name=tgt_user, force_fetch=False)
+    flist = users
+    l = LMTCList(auth_user, list_name=lname, create_if_not_exists=True)
+    l.add_to_target(flist)
+    page+="Done"
+    
+  except Exception as ex:
+    page += "<br>New Exception occurred:<br>"
+    page += str(ex).replace('\n', '<br>')
+    traceback.print_exc()
+    page += "<br>Exception done<br>"
+  
+  return page
 
 @app.route("/twit/change_client_id", methods=["GET"])
 def twit_change_client_id():

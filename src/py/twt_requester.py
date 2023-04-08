@@ -73,7 +73,8 @@ def add_user_to_list(access_token: str,
   }
   resp = requests.post(add_user_to_list_url,
                        json=req_params,
-                       headers=req_headers)
+                       headers=req_headers,
+                       timeout=2)
   try:
     j = json.loads(resp.text)
     done = j["data"]["is_member"]
@@ -108,7 +109,7 @@ def get_following(access_token: str, user_id: str) -> list:
     j = json.loads(resp.text)
     pagination_token = j['meta'].get('next_token')
     res_list.extend(j['data'])
-    if pagination_token == None:
+    if pagination_token is None:
       print("Got all the followers")
       break
   
@@ -150,4 +151,48 @@ def get_all_user_lists(access_token: str, user_id: str) -> list:
     if next_token == None:
       break
   
+  return ret_list
+
+def get_members_of_list(access_token: str, list_id: str) -> list:
+  '''
+  Return a lost of user_ids present in the given list id
+  return:
+    [{"id":"twitter_user_id",
+      "name":"display name",
+      "username":"twitter_handle"},
+      ......,
+      ......]
+  '''
+  members_url = f"https://api.twitter.com/2/lists/{list_id}/members"
+  ret_list = []
+
+  req_headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {access_token}"
+  }
+  
+  pagination_token = None
+  while True:
+    try:
+      req_params = {
+        "max_results": 100
+      }
+      if pagination_token:
+        req_params.update({"pagination_token": pagination_token})
+      resp = requests.get(members_url, params=req_params, headers=req_headers,
+                          timeout=9)
+      j = json.loads(resp.text)
+      if "errors" in j:
+        print(j)
+        break
+      pagination_token = j["meta"].get("next_token")
+      ret_list.extend(j["data"])
+      if pagination_token is None:
+        print(f"Done fetching all the members of list_id:{list_id}")
+        break
+    except Exception as ex:
+      print("Exception occured when requesting for the list members",
+            ex)
+      break
+  print(f"len(ret_list) = {len(ret_list)}")
   return ret_list

@@ -58,4 +58,64 @@ class LMTCList:
       f" user_id:{self._userid}" \
       f" list_id:{self._listid}"
   
-  def 
+  def is_user_in_list(self, user_id:str = None,
+                      user_name:str = None,
+                      sync_on_fail:bool = False) -> bool:
+    try:
+      found = self._provider.lmtc_is_user_in_list(self._listid, user_id,
+                                                  user_name, sync_on_fail)
+      return found
+    except Exception as ex:
+      print(f"Exception occured when looking up list {self._listname}", ex)
+    return False
+  
+  def try_add_user(self, user_id:str = None,
+                   user_name:str = None, bypass_failed:bool = False) -> bool:
+    uid = None
+    if user_id is not None:
+      uid = user_id
+    if user_name is not None:
+      if uid is not None:
+        print("Both id and name given")
+        raise ValueError("Both id and name given")
+      uid = self._provider.lookup_user_name_map(user_name, True)
+    if uid is None:
+      print("Neither id or name given")
+      raise ValueError("No tgt id or name given")
+    
+    if self.is_user_in_list(user_id=uid):
+      return True
+    
+    added = self._provider.lmtc_add_user_to_list(self._listid, uid,
+                                                 bypass_failed)
+    return added
+
+  def sync(self):
+    '''
+    This is to force sync for list
+    '''
+    try:
+      self._provider.lmtc_sync(self._listid)
+    except Exception as ex:
+      print("Exception when trying to sync list_id:{self._listid}")
+      print(ex)
+  
+  def get_current_members(self, force_sync:bool = False) -> list:
+    '''
+    Get the list of user_ids
+    '''
+    if force_sync:
+      self.sync()
+    
+    return self._provider.lmtc_get_members_of_list(self._listid)
+
+  def add_to_target(self, user_ids:list) -> bool:
+    '''
+    Add to the target of a list
+    '''
+    try:
+      return self._provider.lmtc_add_target_of_list(self._listid, user_ids)
+    except Exception as ex:
+      print("Failed while adding to tgt list")
+      print(ex)
+

@@ -89,6 +89,8 @@ class TwtDetaDBProvider(TwtDataProvider):
 
   _user_map = {}
 
+  __slots__ = ["_user_name", "_deta", "_maps", "_tkn_mgr", "_user_id"]
+
   '''
   Base schemas:
   user_name_map:
@@ -150,7 +152,7 @@ class TwtDetaDBProvider(TwtDataProvider):
     try:
       user_id = db_ret['user_id']
     except Exception as ex:
-      print(str(ex))
+      print(f"username:{user_name} not found", str(ex))
     if fetch_if_not_found and user_id in (None, ""):
       _ = twt_requester.get_user(self._tkn_mgr.get_access_token(),
                                  username= user_name)
@@ -224,7 +226,6 @@ class TwtDetaDBProvider(TwtDataProvider):
     
     return list_id
 
-
   def get_following_of_user(self, user_name: str,
                             force_fetch: bool = False) -> list :
     db = self._get_map_db(self.USER_ID_FOLLOWING_MAP)
@@ -247,7 +248,7 @@ class TwtDetaDBProvider(TwtDataProvider):
     
     return user_id_list
   
-
+  # TODO(samarth.s): Deprecate this
   def add_user_id_to_list_id(self, user_id: str, list_id: str,
                              pre_check: bool = True) -> bool:
     user_in_list = self.check_user_id_in_list_id(user_id=user_id,
@@ -270,7 +271,7 @@ class TwtDetaDBProvider(TwtDataProvider):
     
     return False
 
-
+  # TODO(samarth.s): Deprecate this
   def check_user_id_in_list_id(self, user_id: str, list_id: str,
                                force_fetch: bool = False) -> bool:
     # TODO(samarth.s): implement the force_fetch call.
@@ -285,8 +286,149 @@ class TwtDetaDBProvider(TwtDataProvider):
     
     ret = user_id in members
     return ret
-
   
+  def lmtc_sync(self, list_id: str) -> None:
+    '''
+    This forcefully syncs the members of the given list id.
+    '''
+    db = self._get_map_db(TwtDetaDBProvider.LMTC_MAP)
+    members = twt_requester.get_members_of_list(
+                self._tkn_mgr.get_access_token(), list_id)
+    member_ids = [x["id"] for x in members]
+    try:
+      db_ret = db.get(f"{list_id}")
+      if db_ret is None:
+        print("Inserting because list entry doesn't exist")
+        db_ret =  db.insert({"current_members": member_ids}, f"{list_id}")
+      else:
+        db_ret = db.update({"current_members": member_ids}, f"{list_id}")
+      print("After update", db_ret)
+    except Exception as ex:
+      print("Failed to update the db during lmtc_sync", ex)
+
+  def lmtc_is_user_in_list(self, list_id: str, tgt_user_id: str = None,
+                           tgt_user_name: str = None,
+                           sync_if_not_found: bool = False) -> bool:
+    '''
+    Check if the given user is in the list or not. Return True or False
+    accordingly. If sync_if_not_found is set then there is a auto refresh.
+    There is no option to know for sure if the user is currently there or not
+    using only this method. Run a lmtc_sync to achieve that.
+    '''
+    uid = None
+    if tgt_user_id is not None:
+      uid = tgt_user_id
+    if tgt_user_name is not None:
+      if uid is not None:
+        print("Both id and name given")
+        raise ValueError("Both id and name given")
+      uid = self.lookup_user_name_map(tgt_user_name, True)
+    if uid is None:
+      print("Neither id or name given")
+      raise ValueError("No tgt id or name given")
+    db = self._get_map_db(TwtDetaDBProvider.LMTC_MAP)
+    db_ret = db.get(f"{list_id}")
+    if db_ret is not None:
+      current_list = db_ret.get("current_members")
+      if current_list is not None:
+        if uid in current_list:
+          return True
+    if sync_if_not_found is False:
+      return False
+    print(f"Starting a sync for list_id:{list_id}")
+    self.lmtc_sync(list_id)
+    db_ret = db.get(f"{list_id}")
+    if db_ret is not None:
+      current_list = db_ret.get("current_members")
+      if current_list is not None:
+        if uid in current_list:
+          return True
+    return False
+
+  def lmtc_add_user_to_list(self, list_id:str, user_id:str,
+                            force:bool = False) -> bool:
+    '''
+    Try and add the user to the list if it's not already in the failed list.
+    '''
+    db = self._get_map_db(TwtDetaDBProvider.LMTC_MAP)
+    db_ret = db.get(f"{list_id}")
+    if db_ret is None:
+      print(f"No lmtc map entry for list_id:{list_id}. syncing")
+      self.lmtc_sync(list_id=list_id)
+    db_ret = db.get(f"{list_id}")
+    failed_list = db_ret.get("failed_to_add")
+    current_list = db_ret.get("current_list")
+    if failed_list is None:
+      failed_list = []
+    if current_list is None:
+      current_list = []
+    if user_id in failed_list:
+      print(f"user_id:{user_id} in failed list for list_id:{list_id}")
+      if force is False:
+        return False
+      print(f"force is set to true for user_id:{user_id}")    
+    added = twt_requester.add_user_to_list(self._tkn_mgr.get_access_token(),
+                                           list_id=list_id, user_id=user_id)
+    if added:
+      current_list.append(user_id)
+      try:
+        db_ret = db.update({"current_members": current_list}, list_id)
+      except Exception as ex:
+        print("Failed to update the current list after update")
+        print(ex)
+      return True
+    else:
+      if user_id not in failed_list:
+        failed_list.append(user_id)
+      try:
+        db_ret = db.update({"failed_to_add": failed_list}, list_id)
+      except Exception as ex:
+        print("Failed to update the failed_to_add for user_id:{user_id}")
+        print(ex)
+      return False
+
+  def lmtc_get_members_of_list(self, list_id:str) -> list:
+    '''
+    Return the members of the list
+    '''
+    db = self._get_map_db(TwtDetaDBProvider.LMTC_MAP)
+    db_ret = db.get(f"{list_id}")
+    if db_ret is None:
+      return []
+    
+    current_list = db_ret.get("current_members")
+    if current_list is None:
+      current_list = []
+    return current_list
+
+  def lmtc_add_target_of_list(self, list_id:str, user_ids:list) -> bool:
+    '''
+    Add the uesr_ids to the target member of the twitter list
+    '''
+    db = self._get_map_db(TwtDetaDBProvider.LMTC_MAP)
+    db_ret = db.get(f"{list_id}")
+    if db_ret is None:
+      print(f"No entry for list_id:{list_id} when adding targets")
+      try:
+        db.insert({"target_members": []}, f"{list_id}")
+      except Exception as ex:
+        print(f"Exception occured when creating entry for list_id:{list_id}")
+        print(ex)
+      db_ret = db.get(f"{list_id}")
+    if db_ret is None:
+      print("what a teribble failure")
+      raise ValueError("hm...")
+    tgt_list = db_ret.get("target_members")
+    if tgt_list is None:
+      tgt_list = []
+    tgt_list.extend(user_ids)
+    try:
+      update_res = db.update({"target_members": tgt_list}, f"{list_id}")
+      return True
+    except Exception as ex:
+      print(f"Failed to update tgt list for list_id:{list_id}")
+      print(ex)
+      return False
 
 # This should be the only thing imported from this file. This is like the
 # factory design pattern.
