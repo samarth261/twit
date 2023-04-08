@@ -430,6 +430,20 @@ class TwtDetaDBProvider(TwtDataProvider):
       print(ex)
       return False
 
+  def lmtc_get_target_of_list(self, list_id:str) -> list:
+    '''
+    Return the target list
+    '''
+    db = self._get_map_db(TwtDetaDBProvider.LMTC_MAP)
+    db_ret = self.get(f"{list_id}")
+    if db_ret is None:
+      print("oops")
+      return []
+    ret_list = db_ret.get("target_members")
+    if ret_list is None:
+      return []
+    return ret_list
+
 # This should be the only thing imported from this file. This is like the
 # factory design pattern.
 def GetTwtDetaDBProvider(user_name: str):

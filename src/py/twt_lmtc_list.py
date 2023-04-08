@@ -119,3 +119,10 @@ class LMTCList:
       print("Failed while adding to tgt list")
       print(ex)
 
+  def try_50_from_tgt():
+    '''
+    Try adding 50 new user_id
+    '''
+    tgt = self._provider.lmtc_get_tgt(self._listid)
+    
+
