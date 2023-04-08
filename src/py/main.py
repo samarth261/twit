@@ -187,7 +187,7 @@ def twit_make_a_list_from_following_list():
   return page
 
 @app.route("/twit/add_job_following_list", methods=["GET"])
-def twit_make_a_list_from_following_list():
+def twit_make_a_lmtc_list_from_following_list():
   page = ""
   try:
     auth_user = request.args.get("self")
@@ -207,6 +207,7 @@ def twit_make_a_list_from_following_list():
     traceback.print_exc()
     page += "<br>Exception done<br>"
   
+  page+='<br><a href="/">home</a>'
   return page
 
 @app.route("/twit/change_client_id", methods=["GET"])
@@ -223,6 +224,7 @@ def twit_change_client_id():
     page += str(ex).replace('\n', '<br>')
     traceback.print_exc()
     page += "<br>Exception done<br>"
+  page+='<br><a href="/">home</a>'
   return page
 
 @app.route("/__space/v0/actions", methods=['POST'])
